@@ -19,43 +19,11 @@ floatX = theano.config.floatX
 
 # XXX dataset parameters
 MNIST_PATH = 'mnist.pkl.gz'
-FREYFACES_PATH = '../data/freyfaces.pkl'
-
-# XXX refactor / split this file up
-
-def save_model_params(model, fname):
-    f = h5py.File(fname, 'w')
-    names = [str(p) for p in model.params]
-    assert(len(set(names)) == len(names))
-    for p in model.params:
-        dset = f.create_dataset(str(p), data=p.get_value())
-    f.close()
-
-def load_model_params(model, fname):
-    f = h5py.File(fname, 'r')
-    names = [str(p) for p in model.params]
-    for p, name in zip(model.params, names):
-        p.set_value(f[name][:])
-    f.close()
-
-def ortho_init(ndim, ndim1, act=None, scale=None):
-    assert(ndim == ndim1)
-    W = np.random.randn(ndim, ndim)
-    u, s, v = np.linalg.svd(W)
-    return u.astype(floatX)
-
-def norm_init(nin, nout, act=None, scale=0.01):
-    W = scale * np.random.randn(nin, nout)
-    return W.astype(floatX)
 
 def uniform_init(nin, nout, act=None, scale=0.08):
     W = np.random.uniform(low=-1 * scale, high=scale, size=nin*nout)
     W = W.reshape((nin, nout))
     return W.astype(floatX)
-
-def torch_init(nin, nout, act=None, scale=None):
-    scale = 1. / np.sqrt(nout)
-    return uniform_init(nin, nout, scale=scale)
 
 def glorot_init(n_in, n_out, act=None, scale=None):
     W_values = np.asarray(
@@ -71,15 +39,6 @@ def glorot_init(n_in, n_out, act=None, scale=None):
         W_values *= 4
     return W_values
 
-class Dropout:
-
-    def __init__(self, inp, p):
-        # NOTE need to set p to 0 during testing
-        self.srng = RandomStreams(seed=np.random.randint(1e6))
-        self.p = p
-        self.inp = inp
-        self.out = self.inp * self.srng.binomial(self.inp.shape, p=1.0 - self.p, dtype=floatX) / (1.0 - self.p)
-
 def _linear_params(n_in, n_out, suffix, init=uniform_init, scale=None, bias=True, act=None):
     if scale == None:
         scale = float(os.environ.get('WEIGHT_SCALE', '0.1'))
@@ -90,16 +49,6 @@ def _linear_params(n_in, n_out, suffix, init=uniform_init, scale=None, bias=True
     else:
         return W
 
-def to_one_hot(y, nclasses):
-    if np.isscalar(y):
-        ny = 1
-        y = [y]
-    else:
-        ny = y.shape[0]
-    y_1_hot = np.zeros((ny, nclasses), dtype=np.int32)
-    for k in xrange(ny):
-        y_1_hot[k, y[k]] = 1
-    return y_1_hot
 
 def load_dataset(dset='mnist'):
     if dset == 'mnist':
@@ -126,27 +75,6 @@ def load_dataset(dset='mnist'):
         raise RuntimeError('unrecognized dataset: %s' % dset)
     return data
 
-def get_labeled_examples(x, y, num_per_class=10, seed=1234):
-    np.random.seed(seed)
-    splits = defaultdict(list)
-    for k in xrange(x.shape[0]):
-        splits[y[k]].append(k)
-    x_l = list()
-    y_l = list()
-    for c in splits:
-        inds = random.sample(splits[c], num_per_class)
-        x_l.append(x[inds, :])
-        y_l.append(y[inds])
-    x_l = np.concatenate(x_l, axis=0)
-    y_l = np.concatenate(y_l)
-    return x_l, y_l
-
-# costs
-
-def kld_unit_mvn(mu, var):
-    # KL divergence from N(0, I)
-    return (mu.shape[1] + T.sum(T.log(var), axis=1) - T.sum(T.square(mu), axis=1) - T.sum(var, axis=1)) / 2.0
-
 def log_diag_mvn(mu, var):
     def f(x):
         # expects batches
@@ -154,7 +82,6 @@ def log_diag_mvn(mu, var):
         logp = (-k / 2.0) * np.log(2 * np.pi) - 0.5 * T.sum(T.log(var), axis=1) - T.sum(0.5 * (1.0 / var) * (x - mu) * (x - mu), axis=1)
         return logp
     return f
-
 # test things out
 
 if __name__ == '__main__':

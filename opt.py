@@ -1,6 +1,6 @@
 import numpy as np
 import theano
-from ug_utils import floatX
+from utils import floatX
 from theano import tensor as T
 
 

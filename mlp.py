@@ -1,7 +1,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from ug_utils import log_diag_mvn, glorot_init, floatX
+from utils import log_diag_mvn, glorot_init, floatX
 from opt import get_opt_fn
 
 

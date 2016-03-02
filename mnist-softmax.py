@@ -5,7 +5,7 @@ import argparse
 from os.path import join as pjoin
 import theano
 import theano.tensor as T
-from ug_utils import load_dataset, floatX, uniform_init
+from utils import load_dataset, floatX, uniform_init
 from mlp import DNN, CategoricalMLP
 from opt import optimizers, get_opt_fn
 

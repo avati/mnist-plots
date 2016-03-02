@@ -5,7 +5,7 @@ import argparse
 from os.path import join as pjoin
 import theano
 import theano.tensor as T
-from ug_utils import load_dataset, floatX
+from utils import load_dataset, floatX
 from mlp import DNN, CategoricalMLP
 from opt import optimizers, get_opt_fn
 
@@ -64,7 +64,7 @@ def measure_perf(x, y, model, args):
     for l in xrange(num_batches):
         x_batch = x[l * args.batch_size:(l + 1) * args.batch_size, :]
         y_batch = y[l * args.batch_size:(l + 1) * args.batch_size]
-        cost, prob, pred = model.test(x_batch, y_batch)
+        cost, pred = model.test(x_batch, y_batch)
         correct = np.sum(pred == y_batch)
         total = np.prod(y_batch.shape)
         total_correct = total_correct + correct
